@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  agent:
+    image: portainer/agent:2.14.2
+    restart: unless-stopped
+    environment:
+      AGENT_CLUSTER_ADDR: tasks.agent
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      - portainer-agent-nw
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.platform.os == linux
+
+  portainer:
+    image: portainer/portainer-ce:2.14.1
+    restart: unless-stopped
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    volumes:
+      - /srv/portainer-stack/data:/data
+    networks:
+      - portainer-agent-nw
+      - reverse-proxy-nw
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.managerStatus == leader
+
+networks:
+  portainer-agent-nw:
+    attachable: true
+  reverse-proxy-nw:
+    external: true
