@@ -4,7 +4,7 @@ services:
   manager:
     image: jc21/nginx-proxy-manager:2.9.18
     environment:
-      - DISABLE_IPV6: 'true'
+      - 'DISABLE_IPV6=true'
     deploy:
       mode: replicated
       replicas: 1
