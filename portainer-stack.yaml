@@ -11,8 +11,6 @@ services:
     networks:
       - portainer-agent-nw
     deploy:
-      restart_policy:
-        condition: unless-stopped
       mode: global
       placement:
         constraints:
@@ -29,8 +27,6 @@ services:
       - portainer-agent-nw
       - reverse-proxy-nw
     deploy:
-      restart_policy:
-        condition: unless-stopped
       placement:
         constraints:
           - node.role == manager
