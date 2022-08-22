@@ -3,7 +3,6 @@ version: '3.9'
 services:
   agent:
     image: portainer/agent:2.14.2
-    restart: unless-stopped
     environment:
       AGENT_CLUSTER_ADDR: tasks.agent
     volumes:
@@ -12,6 +11,8 @@ services:
     networks:
       - portainer-agent-nw
     deploy:
+      restart_policy:
+        condition: unless-stopped
       mode: global
       placement:
         constraints:
@@ -19,7 +20,8 @@ services:
 
   server:
     image: portainer/portainer-ce:2.14.1
-    restart: unless-stopped
+    ports:
+      - '9443:9443'
     command: -H tcp://tasks.agent:9001 --tlsskipverify
     volumes:
       - /srv/portainer-stack/data:/data
@@ -27,6 +29,8 @@ services:
       - portainer-agent-nw
       - reverse-proxy-nw
     deploy:
+      restart_policy:
+        condition: unless-stopped
       placement:
         constraints:
           - node.role == manager
