@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  server:
+    image: gitea/gitea:1.17.1
+    environment:
+      - USER_UID=1001
+      - USER_GID=1001
+    networks:
+      - reverse-proxy-nw
+    volumes:
+      - /srv/gitea-stack/data:/data:rw
+      - /etc/timezone:/etc/timezone
+      - /etc/localtime:/etc/localtime
+
+networks:
+  reverse-proxy-nw:
+    external: true
