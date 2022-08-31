@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  main:
+    image: containous/whoami:latest
+    volumes:
+      - /var/log/nginx:/var/log/nginx
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - reverse-proxy-nw
+
+networks:
+  reverse-proxy-nw:
+    external: true
