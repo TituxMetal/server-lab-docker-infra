@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  duckdns:
+    image: linuxserver/duckdns
+    container_name: duckdns-homelab
+    environment:
+      - TZ=Europe/Paris
+      - SUBDOMAINS=$SUBDOMAINS
+      - TOKEN=$TOKEN
+      - UPDATE_IP=ipv4
+      - PUID=1000
+      - PGID=1000
+      - LOG_FILE=true
+    restart: unless-stopped

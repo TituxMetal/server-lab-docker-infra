@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  nginx-proxy-manager:
+    container_name: 'nginx-proxy-manager-${HOSTNAME}'
+    image: 'jc21/nginx-proxy-manager:2.11.1'
+    environment:
+      TZ: 'Europe/Paris'
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - '/srv/nginx-proxy-manager/data:/data'
+      - '/srv/logs/nginx-proxy-manager:/data/logs/'
+      - '/srv/nginx-proxy-manager/data/letsencrypt:/etc/letsencrypt'
+    networks:
+      - reverse-proxy-nw
+    restart: unless-stopped
+
+  main-site:
+    container_name: 'main-site-${HOSTNAME}'
+    image: 'lgdweb/nginx-test:latest'
+    volumes:
+      - '/srv/logs/nginx:/var/log/nginx'
+      - '/etc/localtime:/etc/localtime:ro'
+      - '/etc/timezone:/etc/timezone:ro'
+    networks:
+      - reverse-proxy-nw
+
+networks:
+  reverse-proxy-nw:
+    external: true

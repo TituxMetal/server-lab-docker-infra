@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  flame:
+    image: pawelmalak/flame
+    container_name: flame-homelab
+    volumes:
+      - data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      - PASSWORD=$PASSWORD
+    networks:
+      - reverse-proxy-nw
+    restart: unless-stopped
+
+volumes:
+  data:
+
+networks:
+  reverse-proxy-nw:
+    external: true

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  fail2ban:
+    container_name: 'fail2ban-${HOSTNAME}'
+    image: 'crazymax/fail2ban:1.0.1'
+    environment:
+      TZ: 'Europe/Paris'
+      F2B_LOG_TARGET: 'STDOUT'
+      F2B_LOG_LEVEL: 'INFO'
+      F2B_ACTION: '%(action_mw)s'
+      F2B_DEST_EMAIL: '${FAIL2BAN_DEST_EMAIL}'
+      SSMTP_HOST: 'mail.infomaniak.com'
+      SSMTP_PORT: '587'
+      SSMTP_USER: '${SSMTP_USER}'
+      SSMTP_PASSWORD: '${SSMTP_PASSWORD}'
+      SSMTP_HOSTNAME: '${SSMTP_HOSTNAME}'
+      SSMTP_TLS: 'NO'
+      SSMTP_STARTTLS: 'YES'
+      F2B_IPTABLES_CHAIN: 'INPUT'
+    privileged: true
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - '/srv/fail2ban/data:/data'
+      - '/srv/logs:/srv/logs:ro'
+      - '/var/log:/var/log:ro'
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
