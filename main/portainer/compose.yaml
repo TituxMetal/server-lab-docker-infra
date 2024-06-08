@@ -15,6 +15,8 @@ services:
     environment:
       AGENT_SECRET: $AGENT_SECRET
       TZ: 'Europe/Paris'
+    networks:
+      - default-nw
     restart: always
 
   # Uncomment the following block to enable the Portainer server, ideally only on one server
@@ -34,7 +36,11 @@ services:
   #     - '/etc/timezone:/etc/timezone:ro'
   #   networks:
   #     - reverse-proxy-nw
+  #     - default-nw
   #   restart: unless-stopped
-# networks:
-#   reverse-proxy-nw:
-#     external: true
+
+networks:
+  default-nw:
+    external: true
+  # reverse-proxy-nw:
+  #   external: true
