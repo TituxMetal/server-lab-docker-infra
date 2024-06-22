@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  logi-prod-report:
+    image: lgdweb/logi-prod-report:latest
+    container_name: 'logi-prod-report-${HOSTNAME}'
+    environment:
+      DATABASE_URL: '${DATABASE_URL}'
+      SESSION_SECRET: '${SESSION_SECRET}'
+      AUTH_SESSION_MAX_AGE: '${AUTH_SESSION_MAX_AGE}'
+    volumes:
+      - data:/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - reverse-proxy-nw
+      - default-nw
+    restart: unless-stopped
+
+volumes:
+  data:
+
+networks:
+  default-nw:
+    external: true
+  reverse-proxy-nw:
+    external: true
