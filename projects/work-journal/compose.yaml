@@ -3,22 +3,25 @@ version: '3.8'
 services:
   work-journal:
     image: lgdweb/work-journal:latest
-    container_name: work-journal-$HOSTNAME
+    container_name: 'work-journal-${HOSTNAME}'
     environment:
-      DATABASE_URL: file:///data/sqlite.db?connection_limit=1
-      SESSION_SECRET: $SESSION_SECRET
-      ADMIN_PASSWORD: $ADMIN_PASSWORD
+      DATABASE_URL: '${DATABASE_URL}'
+      SESSION_SECRET: '${SESSION_SECRET}'
+      ADMIN_PASSWORD: '${ADMIN_PASSWORD}'
     volumes:
       - data:/data
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     networks:
       - reverse-proxy-nw
+      - default-nw
     restart: unless-stopped
 
 volumes:
   data:
 
 networks:
+  default-nw:
+    external: true
   reverse-proxy-nw:
     external: true
