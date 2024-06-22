@@ -16,6 +16,7 @@ services:
       - '/srv/nginx-proxy-manager/data/letsencrypt:/etc/letsencrypt'
     networks:
       - reverse-proxy-nw
+      - default-nw
     restart: unless-stopped
 
   main-site:
@@ -27,7 +28,10 @@ services:
       - '/etc/timezone:/etc/timezone:ro'
     networks:
       - reverse-proxy-nw
+      - default-nw
 
 networks:
+  default-nw:
+    external: true
   reverse-proxy-nw:
     external: true
