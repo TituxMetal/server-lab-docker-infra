@@ -12,4 +12,10 @@ services:
       - PUID=1000
       - PGID=1000
       - LOG_FILE=true
+    networks:
+      - default-nw
     restart: unless-stopped
+
+networks:
+  default-nw:
+    external: true
