@@ -3,18 +3,21 @@ version: '3.8'
 services:
   lobe-chat:
     image: lobehub/lobe-chat
-    container_name: 'lobe-chat-$HOSTNAME'
+    container_name: 'lobe-chat-${HOSTNAME}'
     environment:
-      ACCESS_CODE: $ACCESS_CODE
-      OPENAI_API_KEY: $OPENAI_API_KEY
+      ACCESS_CODE: '${ACCESS_CODE}'
+      OPENAI_API_KEY: '${OPENAI_API_KEY}'
       OPENAI_PROXY_URL: https://api-proxy.com/v1
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     networks:
       - reverse-proxy-nw
+      - default-nw
     restart: unless-stopped
 
 networks:
+  default-nw:
+    external: true
   reverse-proxy-nw:
     external: true
