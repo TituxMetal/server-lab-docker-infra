@@ -3,7 +3,7 @@ version: '3.8'
 services:
   uptime-kuma:
     image: louislam/uptime-kuma:1
-    container_name: uptime-kuma-$HOSTNAME
+    container_name: 'uptime-kuma-${HOSTNAME}'
     volumes:
       - data:/app/data
       - '/var/run/docker.sock:/var/run/docker.sock'
@@ -13,11 +13,14 @@ services:
       - '127.0.0.1:3001:3001'
     networks:
       - reverse-proxy-nw
+      - default-nw
     restart: always
 
 volumes:
   data:
 
 networks:
+  default-nw:
+    external: true
   reverse-proxy-nw:
     external: true
