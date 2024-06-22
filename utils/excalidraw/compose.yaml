@@ -3,16 +3,19 @@ version: '3.8'
 services:
   excalidraw:
     image: excalidraw/excalidraw:latest
-    container_name: excalidraw-$HOSTNAME
-    # ports:
-    #   - '5000:5000'
+    container_name: 'excalidraw-${HOSTNAME}'
+    ports:
+      - '5000:5000'
     restart: unless-stopped
     volumes:
       - '/etc/localtime:/etc/localtime:ro'
       - '/etc/timezone:/etc/timezone:ro'
     networks:
       - reverse-proxy-nw
+      - default-nw
 
 networks:
+  default-nw:
+    external: true
   reverse-proxy-nw:
     external: true
