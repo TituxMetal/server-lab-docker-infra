@@ -14,6 +14,7 @@ services:
     command: 'hbbs -r rustdesk.${HOSTNAME}.lgdweb.ovh:21117'
     networks:
       - rustdesk-nw
+      - default-nw
     depends_on:
       - hbbr
     restart: unless-stopped
@@ -29,11 +30,14 @@ services:
       - data:/root
     networks:
       - rustdesk-nw
+      - default-nw
     restart: unless-stopped
 
 volumes:
   data:
 
 networks:
+  default-nw:
+    external: true
   rustdesk-nw:
     external: false
