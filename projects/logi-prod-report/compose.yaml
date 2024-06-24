@@ -7,7 +7,6 @@ services:
     environment:
       DATABASE_URL: '${DATABASE_URL}'
       SESSION_SECRET: '${SESSION_SECRET}'
-      AUTH_SESSION_MAX_AGE: '${AUTH_SESSION_MAX_AGE}'
     volumes:
       - data:/data
       - /etc/localtime:/etc/localtime:ro
