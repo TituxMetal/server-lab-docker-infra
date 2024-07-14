@@ -1,6 +1,6 @@
 services:
   rocketchat:
-    image: rocketchat/rocket.chat:6.9.2
+    image: rocketchat/rocket.chat:6.10.0
     container_name: 'rocketchat-homer'
     restart: always
     environment:
