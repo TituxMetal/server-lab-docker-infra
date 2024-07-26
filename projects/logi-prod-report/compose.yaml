@@ -6,7 +6,7 @@ services:
     container_name: 'logi-prod-report-${HOSTNAME}'
     environment:
       DATABASE_URL: '${DATABASE_URL}'
-      SESSION_SECRET: '${SESSION_SECRET}'
+      SESSION_SECRET: '${AUTH_SESSION_SECRET}'
     volumes:
       - data:/data
       - /etc/localtime:/etc/localtime:ro
