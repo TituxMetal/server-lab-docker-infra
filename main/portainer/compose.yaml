@@ -3,7 +3,7 @@ version: '3.8'
 services:
   portainer-agent:
     container_name: 'portainer-agent-${PORTAINER_HOSTNAME}'
-    image: 'portainer/agent:2.20.2-alpine'
+    image: 'portainer/agent:alpine-sts'
     ports:
       - '9001:9001'
     volumes:
@@ -22,7 +22,7 @@ services:
   # Uncomment the following block to enable the Portainer server, ideally only on one server
   # portainer-server:
   #   container_name: 'portainer-server-${PORTAINER_HOSTNAME}'
-  #   image: 'portainer/portainer-ce:2.20.2-alpine'
+  #   image: 'portainer/portainer-ce:alpine-sts'
   #   environment:
   #     AGENT_SECRET: $AGENT_SECRET
   #     TZ: 'Europe/Paris'
