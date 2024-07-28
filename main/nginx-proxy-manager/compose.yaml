@@ -3,7 +3,7 @@ version: '3.8'
 services:
   nginx-proxy-manager:
     container_name: 'nginx-proxy-manager-${HOSTNAME}'
-    image: 'jc21/nginx-proxy-manager:2.11.1'
+    image: 'jc21/nginx-proxy-manager:2'
     environment:
       TZ: 'Europe/Paris'
     ports:
