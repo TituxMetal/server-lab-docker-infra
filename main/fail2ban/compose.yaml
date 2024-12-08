@@ -6,9 +6,9 @@ services:
     image: 'crazymax/fail2ban:1.0.1'
     environment:
       TZ: 'Europe/Paris'
-      F2B_LOG_TARGET: 'STDOUT'
+      F2B_LOG_TARGET: '/srv/logs/fail2ban/fail2ban.log'
       F2B_LOG_LEVEL: 'INFO'
-      F2B_ACTION: '%(action_mw)s'
+      F2B_ACTION: '%(action_mwl)s'
       F2B_DEST_EMAIL: '${FAIL2BAN_DEST_EMAIL}'
       SSMTP_HOST: 'mail.infomaniak.com'
       SSMTP_PORT: '587'
@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     volumes:
       - '/srv/fail2ban/data:/data'
-      - '/srv/logs:/srv/logs:ro'
+      - '/srv/logs:/srv/logs'
       - '/var/log:/var/log:ro'
     cap_add:
       - NET_ADMIN
