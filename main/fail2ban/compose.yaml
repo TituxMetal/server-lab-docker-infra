@@ -3,7 +3,7 @@ version: '3.8'
 services:
   fail2ban:
     container_name: 'fail2ban-${HOSTNAME}'
-    image: 'crazymax/fail2ban:1.0.1'
+    image: 'crazymax/fail2ban:1.1.0'
     environment:
       TZ: 'Europe/Paris'
       F2B_LOG_TARGET: '/srv/logs/fail2ban/fail2ban.log'
