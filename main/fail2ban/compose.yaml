@@ -1,22 +1,38 @@
 version: '3.8'
 
 services:
+  msmtpd:
+    container_name: 'msmtpd-${HOSTNAME}'
+    image: 'crazymax/msmtpd:latest'
+    environment:
+      TZ: 'Europe/Paris'
+      SMTP_HOST: 'mail.infomaniak.com'
+      SMTP_PORT: '587'
+      SMTP_TLS: 'on'
+      SMTP_STARTTLS: 'on'
+      SMTP_AUTH: 'on'
+      SMTP_USER: '${SMTP_USER}'
+      SMTP_PASSWORD: '${SMTP_PASSWORD}'
+      SMTP_DOMAIN: '${HOSTNAME}.lgdweb.ovh'
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'nc', '-z', '127.0.0.1', '2500']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   fail2ban:
     container_name: 'fail2ban-${HOSTNAME}'
-    image: 'crazymax/fail2ban:1.0.1'
+    image: 'crazymax/fail2ban:1.1.0'
+    depends_on:
+      msmtpd:
+        condition: service_healthy
     environment:
       TZ: 'Europe/Paris'
       F2B_LOG_TARGET: '/srv/logs/fail2ban/fail2ban.log'
       F2B_LOG_LEVEL: 'INFO'
       F2B_ACTION: '%(action_mwl)s'
       F2B_DEST_EMAIL: '${FAIL2BAN_DEST_EMAIL}'
-      SSMTP_HOST: 'mail.infomaniak.com'
-      SSMTP_PORT: '587'
-      SSMTP_USER: '${SSMTP_USER}'
-      SSMTP_PASSWORD: '${SSMTP_PASSWORD}'
-      SSMTP_HOSTNAME: '${SSMTP_HOSTNAME}'
-      SSMTP_TLS: 'NO'
-      SSMTP_STARTTLS: 'YES'
       F2B_IPTABLES_CHAIN: 'INPUT'
     privileged: true
     network_mode: host
