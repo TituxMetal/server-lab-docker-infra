@@ -40,7 +40,7 @@ server-lab-docker-infra/
 |-- utils/                       Utility and self-hosted services
 |   |-- duckdns/                 Dynamic DNS updater
 |   |-- excalidraw/              Collaborative whiteboard
-|   |-- flame/                   Application dashboard / start page
+|   |-- plausible/               Privacy-friendly web analytics (Plausible CE)
 |   |-- lobechat/                AI chat interface (OpenAI-compatible)
 |   |-- rustdesk/                Remote desktop (ID + relay servers)
 |   |-- uptime-kuma/             Uptime monitoring dashboard
@@ -68,7 +68,7 @@ server-lab-docker-infra/
    |                      |  |  |                       |
    |  - NPM + main-site  |  |  |  - hbbs (ID server)   |
    |  - excalidraw       |  |  |  - hbbr (relay)       |
-   |  - flame            |  |  +-----------+-----------+
+   |  - plausible        |  |  +-----------+-----------+
    |  - lobechat         |  |              |
    |  - logi-prod-report |  |  +-----------+-----------+
    |  - work-journal     |  |  |                       |
@@ -411,29 +411,37 @@ Self-hosted collaborative whiteboard for sketching diagrams and wireframes.
 
 ---
 
-#### Flame
+#### Plausible Analytics
 
-Self-hosted application dashboard and start page with Docker integration for automatic
-service discovery.
+Privacy-friendly, self-hosted web analytics platform (Plausible Community Edition).
+Composed of three services: the Plausible app, a PostgreSQL database, and a ClickHouse
+events database.
 
-| Property       | Value                  |
-|----------------|------------------------|
-| Directory      | `utils/flame/`         |
-| Image          | `pawelmalak/flame`     |
-| Restart policy | `unless-stopped`       |
+| Property       | Value                                          |
+|----------------|------------------------------------------------|
+| Directory      | `utils/plausible/`                             |
+| Image          | `ghcr.io/plausible/community-edition:v3.2.0`  |
+| Dependencies   | PostgreSQL 16, ClickHouse 24.12                |
+| Restart policy | `always`                                       |
 
-**Configuration:** Create a `.env` file in `utils/flame/`:
+**Configuration:** Create a `.env` file in `utils/plausible/` (see `example.env`):
 
-| Variable   | Description                  | Example            |
-|------------|------------------------------|--------------------|
-| `PASSWORD` | Dashboard login password     | (strong password)  |
+| Variable             | Required | Description                             |
+|----------------------|----------|-----------------------------------------|
+| `BASE_URL`           | Yes      | Public URL (e.g. `https://analytics.example.com`) |
+| `SECRET_KEY_BASE`    | Yes      | 64-char random secret for session encryption      |
+| `DISABLE_REGISTRATION` | No    | Set to `invite_only` after first signup           |
+| `SMTP_HOST_ADDR`     | No       | SMTP server for email notifications               |
 
 **Volumes:**
 
-- Named volume `data` mounted at `/app/data`
-- `/var/run/docker.sock` for Docker container discovery
+- `db-data` — PostgreSQL data
+- `event-data` — ClickHouse analytics data (can be very large, 20GB+)
+- `event-logs` — ClickHouse logs
+- `plausible-data` — Plausible app data
+- `clickhouse/` config files mounted read-only (logs, IPv4, low-resources tuning)
 
-**Networks:** `reverse-proxy-nw` only (accessed through NPM).
+**Networks:** `reverse-proxy-nw` (external access via NPM), `default-nw` (internal).
 
 ---
 
@@ -482,6 +490,10 @@ separate containers on an isolated network.
 
 **Configuration:** No `.env` variables required. The relay address is derived from
 `$HOSTNAME` in the `hbbs` command: `hbbs -r rustdesk.${HOSTNAME}.lgdweb.ovh:21117`.
+
+> **Firewall note:** Port `21117/tcp` must be opened manually in UFW on the host server
+> for the relay to work: `sudo ufw allow 21117/tcp`. This service is not managed by
+> Ansible — it is deployed manually via Portainer or Docker Compose on the target server.
 
 **Volumes:**
 
@@ -555,7 +567,8 @@ requires environment variables provides an `example.env` file as a template.
 |-----------|--------------------|----------|----------------------------------|
 | DuckDNS   | `SUBDOMAINS`       | Yes      | DuckDNS subdomain(s)            |
 | DuckDNS   | `TOKEN`            | Yes      | DuckDNS account token            |
-| Flame     | `PASSWORD`         | Yes      | Dashboard login password         |
+| Plausible | `BASE_URL`         | Yes      | Public URL for the analytics instance |
+| Plausible | `SECRET_KEY_BASE`  | Yes      | 64-char secret for session encryption |
 | LobeChat  | `ACCESS_CODE`      | Yes      | UI access protection code        |
 | LobeChat  | `OPENAI_API_KEY`   | Yes      | OpenAI API key                   |
 
