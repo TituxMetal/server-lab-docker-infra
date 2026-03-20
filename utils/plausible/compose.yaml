@@ -1,0 +1,72 @@
+services:
+  plausible_db:
+    image: postgres:16-alpine
+    container_name: plausible-db-${HOSTNAME}
+    restart: always
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    networks:
+      - default-nw
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      start_period: 1m
+
+  plausible_events_db:
+    image: clickhouse/clickhouse-server:24.12-alpine
+    container_name: plausible-events-db-${HOSTNAME}
+    restart: always
+    volumes:
+      - event-data:/var/lib/clickhouse
+      - event-logs:/var/log/clickhouse-server
+      - ./clickhouse/logs.xml:/etc/clickhouse-server/config.d/logs.xml:ro
+      - ./clickhouse/ipv4-only.xml:/etc/clickhouse-server/config.d/ipv4-only.xml:ro
+      - ./clickhouse/low-resources.xml:/etc/clickhouse-server/config.d/low-resources.xml:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - default-nw
+    environment:
+      - CLICKHOUSE_SKIP_USER_SETUP=1
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 -O - http://127.0.0.1:8123/ping || exit 1"]
+      start_period: 1m
+
+  plausible:
+    image: ghcr.io/plausible/community-edition:v3.2.0
+    container_name: plausible-${HOSTNAME}
+    restart: always
+    command: sh -c "/entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+    depends_on:
+      plausible_db:
+        condition: service_healthy
+      plausible_events_db:
+        condition: service_healthy
+    volumes:
+      - plausible-data:/var/lib/plausible
+    networks:
+      - default-nw
+      - reverse-proxy-nw
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    env_file:
+      - .env
+
+volumes:
+  db-data:
+  event-data:
+  event-logs:
+  plausible-data:
+
+networks:
+  default-nw:
+    external: true
+    name: default-nw
+  reverse-proxy-nw:
+    external: true
+    name: reverse-proxy-nw
