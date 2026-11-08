@@ -275,10 +275,11 @@ cp example.env .env
 | Variable          | Description                        | Example                 |
 |-------------------|------------------------------------|-------------------------|
 | `HOSTNAME`        | Server hostname for container name | `homer`                 |
-| `F2B_DEST_EMAIL`  | Notification recipient email       | `alerts@example.com`    |
-| `SSMTP_USER`      | SMTP authentication username       | `smtp-user@example.com` |
-| `SSMTP_PASSWORD`  | SMTP authentication password       | (your SMTP password)    |
-| `SSMTP_HOSTNAME`  | SMTP hostname / FQDN              | `mail.example.com`      |
+| `SMTP_USER`       | SMTP authentication username       | `smtp-user@example.com` |
+| `SMTP_PASSWORD`   | SMTP authentication password       | (your SMTP password)    |
+
+`destemail`/`sender` are not environment variables: the image entrypoint never
+read `F2B_DEST_EMAIL`. They live in `fail2ban/data/jail.d/default.conf`.
 
 **Volumes:**
 
@@ -545,10 +546,8 @@ requires environment variables provides an `example.env` file as a template.
 | Portainer  | `PORTAINER_HOSTNAME` | Yes      | Hostname for container naming      |
 | Portainer  | `AGENT_SECRET`       | Yes      | Shared secret for agent auth       |
 | Fail2ban   | `HOSTNAME`           | Yes      | Server hostname                    |
-| Fail2ban   | `F2B_DEST_EMAIL`     | Yes      | Alert notification email           |
-| Fail2ban   | `SSMTP_USER`         | Yes      | SMTP username                      |
-| Fail2ban   | `SSMTP_PASSWORD`     | Yes      | SMTP password                      |
-| Fail2ban   | `SSMTP_HOSTNAME`     | Yes      | SMTP server FQDN                   |
+| Fail2ban   | `SMTP_USER`          | Yes      | SMTP username (msmtpd)             |
+| Fail2ban   | `SMTP_PASSWORD`      | Yes      | SMTP password (msmtpd)             |
 
 ### Custom Applications
 

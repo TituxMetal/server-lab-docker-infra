@@ -27,17 +27,18 @@ services:
 
   fail2ban:
     container_name: 'fail2ban-${HOSTNAME}'
-    image: 'crazymax/fail2ban:1.1.0'
+    image: 'crazymax/fail2ban:1.1.1'
     depends_on:
       msmtpd:
         condition: service_healthy
     environment:
+      # The entrypoint only reads TZ, F2B_LOG_TARGET, F2B_LOG_LEVEL,
+      # F2B_DB_PURGE_AGE and IPTABLES_MODE. F2B_ACTION, F2B_DEST_EMAIL and
+      # F2B_IPTABLES_CHAIN were never read: `action`, `destemail` and the ban
+      # chain come from fail2ban/data/jail.d/*.conf and action.d/iptables-docker.conf.
       TZ: 'Europe/Paris'
       F2B_LOG_TARGET: '/srv/logs/fail2ban/fail2ban.log'
       F2B_LOG_LEVEL: 'INFO'
-      F2B_ACTION: '%(action_mwl)s'
-      F2B_DEST_EMAIL: '${FAIL2BAN_DEST_EMAIL}'
-      F2B_IPTABLES_CHAIN: 'INPUT'
     privileged: true
     network_mode: host
     restart: unless-stopped
