@@ -3,7 +3,13 @@
 A modular Docker Compose infrastructure for managing containerized services across a
 lab/production server environment. Each service is self-contained with its own
 `compose.yaml`, environment configuration, and documentation, making it easy to deploy
-individually via the CLI or through the Portainer web interface.
+individually via the CLI or through the Arcane web interface.
+
+**Fallback repository.** The managed fleet is provisioned by Ansible, which is the
+source of truth for the system, Docker, NPM, fail2ban and Arcane. This repository is
+kept as a **standalone fallback**: it mounts a server without Ansible, or repairs one
+that is already broken. It is not amputated when a service moves to Ansible — only
+kept in sync.
 
 ## Table of Contents
 
@@ -29,7 +35,7 @@ server-lab-docker-infra/
 |
 |-- main/                        Core infrastructure services
 |   |-- dockerNetwork.sh         Creates the default bridge network
-|   |-- portainer/               Container management (agent + optional server)
+|   |-- arcane/                  Container management (manager, no published port)
 |   |-- nginx-proxy-manager/     Reverse proxy with SSL termination
 |   |-- fail2ban/                Intrusion prevention system
 |
@@ -60,20 +66,20 @@ server-lab-docker-infra/
                              |
               +--------------+--------------+
               |              |              |
-         80/443/81     9001/9443/8000   21115-21119
-              |              |              |
-   +----------+----------+  |  +-----------+-----------+
-   |  reverse-proxy-nw   |  |  |     rustdesk-nw       |
-   |  (external bridge)  |  |  |  (isolated bridge)    |
-   |                      |  |  |                       |
-   |  - NPM + main-site  |  |  |  - hbbs (ID server)   |
-   |  - excalidraw       |  |  |  - hbbr (relay)       |
-   |  - plausible        |  |  +-----------+-----------+
-   |  - lobechat         |  |              |
-   |  - logi-prod-report |  |  +-----------+-----------+
-   |  - work-journal     |  |  |                       |
-   |  - uptime-kuma      |  |  |      default-nw       |
-   |  - (portainer srv)  |  |  |  192.168.10.0/24      |
+         80/443/81     21115-21119
+              |              |
+   +----------+----------+  +-----------+-----------+
+   |  reverse-proxy-nw   |  |     rustdesk-nw       |
+   |  (external bridge)  |  |  (isolated bridge)    |
+   |                      |  |                       |
+   |  - NPM + main-site  |  |  - hbbs (ID server)   |
+   |  - excalidraw       |  |  - hbbr (relay)       |
+   |  - plausible        |  +-----------+-----------+
+   |  - lobechat         |              |
+   |  - logi-prod-report |  +-----------+-----------+
+   |  - work-journal     |  |                       |
+   |  - uptime-kuma      |  |      default-nw       |
+   |  - arcane manager   |  |  192.168.10.0/24      |
    |                      |  |  |  (internal bridge)    |
    +----------+-----------+  |  |                       |
               |              |  |  All services connect  |
@@ -91,7 +97,7 @@ server-lab-docker-infra/
 - Docker Compose V2 (the `docker compose` plugin)
 - A Linux host with `bash` available
 - Sufficient firewall rules (UFW or iptables) for exposed ports
-- (Optional) A Portainer server instance for GUI-based deployment
+- (Optional) An Arcane manager to deploy and manage the stacks from a web UI
 
 ## Network Setup
 
@@ -140,8 +146,8 @@ bash dockerNetwork.sh
 docker network create reverse-proxy-nw
 
 # 2. Deploy core infrastructure
-cd portainer/
-cp example.env .env    # Edit .env with your values
+cd arcane/
+cp example.env .env    # Edit .env with your values (APP_URL, keys)
 docker compose up -d
 
 cd ../nginx-proxy-manager/
@@ -156,61 +162,56 @@ cd ../../utils/uptime-kuma/
 docker compose up -d
 ```
 
-### Portainer Deployment
+### Arcane Deployment
 
-1. Ensure the Portainer agent (or server) is running on the target host.
-2. In the Portainer web UI, navigate to **Stacks > Add stack**.
-3. Paste the contents of the desired `compose.yaml` into the web editor.
-4. Replace any `${HOSTNAME}` references with the actual server hostname.
-5. Add each required environment variable using the **Environment variables** fields.
-6. Click **Deploy the stack**.
+1. Ensure the Arcane agent is running on the target host and appears in the manager.
+2. In the Arcane web UI, create a project from the git repository (or paste the
+   `compose.yaml`).
+3. Set the environment variables from the service's `example.env`.
+4. Deploy.
 
 ## Service Documentation
 
 ### Main -- Core Infrastructure
 
-#### Portainer
+#### Arcane
 
-Container management platform deployed as an agent on each server, with an optional
-server instance on a single node.
+Container management platform. The manager runs on a single node and publishes no
+port: it is reached through Nginx Proxy Manager, or an SSH tunnel. Agents are deployed
+per host, not from this directory. Ansible is the source of truth on the managed
+fleet; this stack is the standalone fallback.
 
-| Property       | Value                                  |
-|----------------|----------------------------------------|
-| Directory      | `main/portainer/`                      |
-| Agent image    | `portainer/agent:alpine-sts`           |
-| Server image   | `portainer/portainer-ce:alpine-sts`    |
-| Restart policy | `always` (agent), `unless-stopped` (server) |
+| Property       | Value                          |
+|----------------|--------------------------------|
+| Directory      | `main/arcane/`                 |
+| Image          | `ghcr.io/getarcaneapp/manager:v2.17.3` |
+| Restart policy | `unless-stopped`               |
 
-**Exposed ports:**
-
-| Port | Service         | Purpose                    |
-|------|-----------------|----------------------------|
-| 9001 | Agent           | Agent communication        |
-| 9443 | Server (opt.)   | HTTPS web UI               |
-| 8000 | Server (opt.)   | Edge agent communication   |
+**Exposed ports:** none. Proxy host -> `arcane-manager-<instance>:3552` (WebSocket
+enabled). `3553` is the agent port, not the manager.
 
 **Configuration:**
 
 ```bash
-cd main/portainer/
+cd main/arcane/
 cp example.env .env
 ```
 
-| Variable             | Description                           | Example            |
-|----------------------|---------------------------------------|--------------------|
-| `PORTAINER_HOSTNAME` | Hostname used in container naming     | `$HOSTNAME`        |
-| `AGENT_SECRET`       | Shared secret for agent communication | `your_secret`      |
+| Variable                | Description                                                   | Example                    |
+|-------------------------|---------------------------------------------------------------|----------------------------|
+| `ARCANE_INSTANCE`       | Hostname used in the container name                           | `$HOSTNAME`                |
+| `ARCANE_VERSION`        | Pinned manager image tag                                      | `v2.17.3`                  |
+| `APP_URL`               | Public URL of the manager                                     | `https://arcane.example.com` |
+| `ENCRYPTION_KEY`        | `openssl rand -hex 32`. **Never change it once data exists**  | (random)                   |
+| `ADMIN_STATIC_API_KEY`  | `arc_` + 64 hex, any other format is rejected at startup      | `arc_...`                  |
+| `TRUSTED_PROXIES`       | CIDR of the reverse proxy network                             | `192.168.10.0/26`          |
 
-**Volumes:**
+**Volumes:** `/var/run/docker.sock`, named volume `arcane-manager-data` mounted at
+`/app/data`.
 
-- `/` mounted as `/host` (read-only host filesystem access for the agent)
-- `/var/run/docker.sock` (Docker socket)
-- `/var/lib/docker/volumes` (volume management)
-- `/srv/portainer/data` (server data, when server is enabled)
-
-**Notes:** To enable the Portainer server, uncomment the `portainer-server` block in
-`compose.yaml`. The server should only run on one node. See `NOTES.md` for firewall
-requirements.
+**Notes:** see `NOTES.md`. Use an SSH tunnel for the NPM admin panel; a proxy host
+pointing at port `81` would expose it publicly even though Docker binds it to
+`127.0.0.1`.
 
 ---
 
@@ -223,17 +224,21 @@ default landing page.
 | Property       | Value                              |
 |----------------|------------------------------------|
 | Directory      | `main/nginx-proxy-manager/`        |
-| NPM image      | `jc21/nginx-proxy-manager:2`      |
+| NPM image      | `jc21/nginx-proxy-manager:2.16.0`  |
 | Site image     | `lgdweb/nginx-test:latest`         |
 | Restart policy | `unless-stopped`                   |
 
 **Exposed ports:**
 
-| Port | Purpose                          |
-|------|----------------------------------|
-| 80   | HTTP traffic                    |
-| 443  | HTTPS traffic                   |
-| 81   | NPM admin panel                 |
+| Port | Binding        | Purpose                          |
+|------|----------------|----------------------------------|
+| 80   | all            | HTTP traffic                     |
+| 443  | all            | HTTPS traffic                    |
+| 81   | `127.0.0.1`    | NPM admin panel (SSH tunnel)     |
+
+> The admin panel listens on `0.0.0.0:81` **inside** the container: a proxy host
+> forwarding to port 81 would republish it through 80/443 despite the loopback
+> binding. Use an SSH tunnel (`ssh -N -L 8181:127.0.0.1:81 <host>`).
 
 **Volumes:**
 
@@ -260,7 +265,7 @@ activity. Sends email notifications via SMTP.
 | Property       | Value                        |
 |----------------|------------------------------|
 | Directory      | `main/fail2ban/`             |
-| Image          | `crazymax/fail2ban:1.0.1`    |
+| Image          | `crazymax/fail2ban:1.1.1`    |
 | Network mode   | `host`                       |
 | Privileged     | `true`                       |
 | Restart policy | `unless-stopped`             |
@@ -438,9 +443,12 @@ events database.
 
 - `db-data` — PostgreSQL data
 - `event-data` — ClickHouse analytics data (can be very large, 20GB+)
-- `event-logs` — ClickHouse logs
+- `event-logs` — ClickHouse logs, rotated at 100 MB x 5 by `clickhouse/logs.xml`
 - `plausible-data` — Plausible app data
 - `clickhouse/` config files mounted read-only (logs, IPv4, low-resources tuning)
+
+Container logs are capped at 10 MB x 3 for all three services. Host-level log
+rotation and `event-data` retention are **not** solved here.
 
 **Networks:** `reverse-proxy-nw` (external access via NPM), `default-nw` (internal).
 
@@ -475,9 +483,9 @@ separate containers on an isolated network.
 
 | Property       | Value                              |
 |----------------|------------------------------------|
-| Directory      | `utils/rustdesk/`                  |
-| Image          | `rustdesk/rustdesk-server:latest`  |
-| Restart policy | `unless-stopped`                   |
+| Directory      | `utils/rustdesk/`                 |
+| Image          | `rustdesk/rustdesk-server:1.1.16` |
+| Restart policy | `unless-stopped`                  |
 
 **Exposed ports:**
 
@@ -489,17 +497,36 @@ separate containers on an isolated network.
 | 21118 | TCP      | hbbs    | WebSocket (ID)           |
 | 21119 | TCP      | hbbr    | WebSocket (relay)        |
 
-**Configuration:** No `.env` variables required. The relay address is derived from
-`$HOSTNAME` in the `hbbs` command: `hbbs -r rustdesk.${HOSTNAME}.lgdweb.ovh:21117`.
+**Configuration:** create `.env` from `example.env`:
 
-> **Firewall note:** Port `21117/tcp` must be opened manually in UFW on the host server
-> for the relay to work: `sudo ufw allow 21117/tcp`. This service is not managed by
-> Ansible — it is deployed manually via Portainer or Docker Compose on the target server.
+| Variable              | Description                                                     | Example               |
+|-----------------------|-----------------------------------------------------------------|-----------------------|
+| `RUSTDESK_INSTANCE`   | Suffix of the container names                                   | `laura`               |
+| `RUSTDESK_RELAY_HOST` | Hostname announced to clients for the relay (port 21117)        | `laura.lgdweb.ovh`    |
+| `RUSTDESK_KEY`        | **Public** key, already present in every deployed client        | `Qrr...db8=`          |
+
+Two rules that are not optional:
+
+1. **`RUSTDESK_RELAY_HOST` is a stable client-facing name, not the hostname of the
+   machine running the service.** It is what makes a migration transparent: the
+   record is repointed to the new host and nothing changes on the clients.
+2. **The private key must already be in the volume before the first start.**
+   `hbbs` signs the peer public keys with `id_ed25519`; without it a new pair is
+   generated and every client fails to connect. Seed `rustdesk-data` first.
+
+Never pass the **public** key as `hbbs -k <key>`: `hbbs` then skips `id_ed25519`
+entirely and runs without a signing key. `-k` is used on `hbbr` only, as an opaque
+string that relay requests must carry.
+
+> **Firewall note:** open `21116` TCP **and** UDP and `21117` TCP (`21115`, `21118`,
+> `21119` only for the web client) on the provider firewall. Docker-published ports
+> bypass `ufw`: the provider firewall is the real gate. This service is not managed by
+> Ansible — it is deployed manually via Arcane or Docker Compose on the target server.
 
 **Volumes:**
 
-- Shared named volume `data` mounted at `/root` for both containers (stores keys and
-  configuration)
+- Named volume `rustdesk-data` (fixed `name:`, not prefixed by the compose project),
+  mounted at `/root` on both containers. It stores the key pair and the peer database.
 
 **Networks:** `rustdesk-nw` (isolated bridge, auto-created), `default-nw` (internal).
 
@@ -543,8 +570,10 @@ requires environment variables provides an `example.env` file as a template.
 
 | Service    | Variable             | Required | Description                        |
 |------------|----------------------|----------|------------------------------------|
-| Portainer  | `PORTAINER_HOSTNAME` | Yes      | Hostname for container naming      |
-| Portainer  | `AGENT_SECRET`       | Yes      | Shared secret for agent auth       |
+| Arcane     | `ARCANE_INSTANCE`    | Yes      | Hostname for container naming      |
+| Arcane     | `APP_URL`            | Yes      | Public URL of the manager          |
+| Arcane     | `ENCRYPTION_KEY`     | Yes      | Never change once data exists      |
+| Arcane     | `ADMIN_STATIC_API_KEY` | Yes    | `arc_` + 64 hex                    |
 | Fail2ban   | `HOSTNAME`           | Yes      | Server hostname                    |
 | Fail2ban   | `SMTP_USER`          | Yes      | SMTP username (msmtpd)             |
 | Fail2ban   | `SMTP_PASSWORD`      | Yes      | SMTP password (msmtpd)             |
@@ -570,6 +599,9 @@ requires environment variables provides an `example.env` file as a template.
 | Plausible | `SECRET_KEY_BASE`  | Yes      | 64-char secret for session encryption |
 | LobeChat  | `ACCESS_CODE`      | Yes      | UI access protection code        |
 | LobeChat  | `OPENAI_API_KEY`   | Yes      | OpenAI API key                   |
+| RustDesk  | `RUSTDESK_INSTANCE` | Yes     | Container name suffix            |
+| RustDesk  | `RUSTDESK_RELAY_HOST` | Yes   | Client-facing relay hostname     |
+| RustDesk  | `RUSTDESK_KEY`     | Yes      | Public key (relay authentication) |
 
 ## Deployment Methods
 
@@ -594,21 +626,18 @@ docker compose up -d
 docker compose ps
 ```
 
-### Method 2: Portainer GUI
+### Method 2: Arcane GUI
 
 Recommended for manual deployments and visual management.
 
-1. Open the Portainer web UI (default: `https://<server>:9443`).
-2. Select the target environment (endpoint).
-3. Navigate to **Stacks** and click **Add stack**.
-4. Give the stack a name matching the service.
-5. Paste the `compose.yaml` content into the **Web editor**.
-6. Replace all `${HOSTNAME}` occurrences with the actual server hostname.
-7. Under **Environment variables**, add each required variable with its name and value.
-8. Click **Deploy the stack**.
+1. Open the Arcane manager (`https://<manager host>`).
+2. Select the target environment.
+3. Create a project, either from a git repository or by pasting the compose file.
+4. Set the environment variables from `example.env` in the project.
+5. Deploy.
 
-To update a stack in Portainer, navigate to the stack, click **Editor**, make changes,
-and click **Update the stack**.
+To update a project, change the compose file or the variables and redeploy. A git
+project can also be imported once instead of being synced continuously.
 
 ## Automated Updates with Renovate
 
