@@ -1,0 +1,30 @@
+services:
+  arcane:
+    container_name: 'arcane-manager-${ARCANE_INSTANCE:?ARCANE_INSTANCE is required}'
+    image: 'ghcr.io/getarcaneapp/manager:${ARCANE_VERSION:-v2.17.3}'
+    environment:
+      TZ: 'Europe/Paris'
+      APP_URL: '${APP_URL:?APP_URL is required}'
+      PUID: '${PUID:-1000}'
+      PGID: '${PGID:-1000}'
+      # Never change ENCRYPTION_KEY on a manager that already holds data: it is
+      # not reconciled and makes the database unreadable.
+      ENCRYPTION_KEY: '${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}'
+      # Must be `arc_` followed by 64 hex characters, otherwise the manager
+      # silently refuses it at startup. Safe to rotate.
+      ADMIN_STATIC_API_KEY: '${ADMIN_STATIC_API_KEY:?ADMIN_STATIC_API_KEY is required}'
+      # NPM is the only client of the API; without this Arcane logs the proxy IP.
+      TRUSTED_PROXIES: '${TRUSTED_PROXIES:-192.168.10.0/26}'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - 'arcane-manager-data:/app/data'
+    networks:
+      - default-nw
+    restart: unless-stopped
+
+volumes:
+  arcane-manager-data:
+
+networks:
+  default-nw:
+    external: true
