@@ -6,7 +6,9 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=postgres
+      # Not left at the upstream default: the database is only reachable on
+      # default-nw, but a hard-coded password is still a password everyone knows.
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     networks:
       - default-nw
     logging:
@@ -71,6 +73,10 @@ services:
         max-file: "3"
     env_file:
       - .env
+    # `environment` wins over `env_file`: keep DATABASE_URL derived from the
+    # single POSTGRES_PASSWORD source of truth.
+    environment:
+      DATABASE_URL: 'postgres://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@plausible_db:5432/plausible'
 
 volumes:
   db-data:
