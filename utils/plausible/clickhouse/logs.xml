@@ -4,6 +4,18 @@
         <console>true</console>
     </logger>
 
+    <!-- Rotate the server log files: without this they only grow until the
+         volume fills up (1.6 GB of logs measured on the host). -->
+    <log>
+        <size>100M</size>
+        <count>5</count>
+    </log>
+
+    <errorlog>
+        <size>100M</size>
+        <count>5</count>
+    </errorlog>
+
     <query_log replace="1">
         <database>system</database>
         <table>query_log</table>
