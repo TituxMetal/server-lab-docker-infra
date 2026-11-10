@@ -1,17 +1,19 @@
-version: '3.8'
-
 services:
   hbbs:
-    container_name: 'rustdesk-id-${HOSTNAME}'
-    image: rustdesk/rustdesk-server:latest
+    container_name: 'rustdesk-id-${RUSTDESK_INSTANCE:?RUSTDESK_INSTANCE is required}'
+    image: rustdesk/rustdesk-server:1.1.16
     ports:
-      - 21115:21115
-      - 21116:21116
-      - 21116:21116/udp
-      - 21118:21118
+      - '21115:21115'
+      - '21116:21116'
+      - '21116:21116/udp'
+      - '21118:21118'
     volumes:
-      - data:/root
-    command: 'hbbs -r rustdesk.${HOSTNAME}.lgdweb.ovh:21117'
+      - rustdesk-data:/root
+    # No `-k` here on purpose: hbbs only loads id_ed25519 from /root when `-k`
+    # is empty, "-" or a 64-byte secret. Passing the public key makes hbbs run
+    # without a signing key and clients that already trust that key break.
+    # The private key must already be in the volume (see example.env).
+    command: 'hbbs -r ${RUSTDESK_RELAY_HOST:?RUSTDESK_RELAY_HOST is required}:21117'
     networks:
       - rustdesk-nw
       - default-nw
@@ -20,21 +22,26 @@ services:
     restart: unless-stopped
 
   hbbr:
-    container_name: 'rustdesk-relay-${HOSTNAME}'
-    image: rustdesk/rustdesk-server:latest
-    command: hbbr
+    container_name: 'rustdesk-relay-${RUSTDESK_INSTANCE:?RUSTDESK_INSTANCE is required}'
+    image: rustdesk/rustdesk-server:1.1.16
+    # hbbr only uses the key as an opaque string: clients must send the same
+    # public key in their relay request, otherwise the relay is open to anyone.
+    command: 'hbbr -k ${RUSTDESK_KEY:?RUSTDESK_KEY is required}'
     ports:
-      - 21117:21117
-      - 21119:21119
+      - '21117:21117'
+      - '21119:21119'
     volumes:
-      - data:/root
+      - rustdesk-data:/root
     networks:
       - rustdesk-nw
       - default-nw
     restart: unless-stopped
 
 volumes:
-  data:
+  rustdesk-data:
+    # Fixed name: the volume carries the server key pair and must keep the same
+    # name across compose project renames (manual, Arcane, another host).
+    name: rustdesk-data
 
 networks:
   default-nw:
