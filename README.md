@@ -491,7 +491,7 @@ separate containers on an isolated network.
 
 | Port  | Protocol | Service | Purpose                  |
 |-------|----------|---------|--------------------------|
-| 21115 | TCP      | hbbs    | NAT type test            |
+| 21115 | TCP      | hbbs    | NAT type test **and the address-book online status stream** |
 | 21116 | TCP/UDP  | hbbs    | ID server / hole punch   |
 | 21117 | TCP      | hbbr    | Relay server             |
 | 21118 | TCP      | hbbs    | WebSocket (ID)           |
@@ -518,10 +518,13 @@ Never pass the **public** key as `hbbs -k <key>`: `hbbs` then skips `id_ed25519`
 entirely and runs without a signing key. `-k` is used on `hbbr` only, as an opaque
 string that relay requests must carry.
 
-> **Firewall note:** open `21116` TCP **and** UDP and `21117` TCP (`21115`, `21118`,
-> `21119` only for the web client) on the provider firewall. Docker-published ports
-> bypass `ufw`: the provider firewall is the real gate. This service is not managed by
-> Ansible — it is deployed manually via Arcane or Docker Compose on the target server.
+> **Firewall note:** open `21116` TCP **and** UDP, `21117` TCP, and `21115` TCP on the
+> provider firewall. Docker-published ports bypass `ufw`: the provider firewall is the
+> real gate. `21115` carries the presence stream behind the green/amber dot of the
+> address book: without it every peer shows as offline (the client logs
+> `Failed to create peers online stream ... :21115` every 18 s) while connections still
+> work. `21118`/`21119` are only needed for the web client. This service is not managed
+> by Ansible — it is deployed manually via Arcane or Docker Compose on the target server.
 
 **Volumes:**
 
