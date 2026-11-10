@@ -1,15 +1,16 @@
-version: '3.8'
-
 services:
   nginx-proxy-manager:
     container_name: 'nginx-proxy-manager-${HOSTNAME}'
-    image: 'jc21/nginx-proxy-manager:2'
+    image: 'jc21/nginx-proxy-manager:2.16.0'
     environment:
       TZ: 'Europe/Paris'
     ports:
       - '80:80'
       - '443:443'
-      - '81:81'
+      # Localhost only. Note: NPM still listens on 0.0.0.0:81 inside the
+      # container, so a proxy host pointing at port 81 would publish the admin
+      # panel through 80/443. Use an SSH tunnel instead.
+      - '127.0.0.1:81:81'
     volumes:
       - '/srv/nginx-proxy-manager/data:/data'
       - '/srv/logs/nginx-proxy-manager:/data/logs/'
