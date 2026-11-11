@@ -1,7 +1,7 @@
 services:
   duckdns:
     image: linuxserver/duckdns
-    container_name: duckdns-homelab
+    container_name: 'duckdns-${HOSTNAME}'
     environment:
       - TZ=Europe/Paris
       - SUBDOMAINS=$SUBDOMAINS
