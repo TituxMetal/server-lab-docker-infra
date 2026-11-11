@@ -24,6 +24,10 @@ services:
 
 volumes:
   arcane-manager-data:
+    # Fixed name: the volume holds the manager database and must survive a rename
+    # of the compose project. Ansible uses arcane-manager-data-<host>, so the two
+    # never collide.
+    name: arcane-manager-data
 
 networks:
   default-nw:
