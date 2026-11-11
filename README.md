@@ -399,13 +399,15 @@ Self-hosted collaborative whiteboard for sketching diagrams and wireframes.
 | Image          | `excalidraw/excalidraw:latest`  |
 | Restart policy | `unless-stopped`                |
 
-**Exposed ports:**
-
-| Port | Purpose          |
-|------|------------------|
-| 5000 | Web UI           |
+**Exposed ports:** none (behind the reverse proxy). It used to publish
+`5000:5000` on every interface; Nginx Proxy Manager reaches it over
+`reverse-proxy-nw`.
 
 **Configuration:** No `.env` file required. Uses the system `$HOSTNAME` for container naming.
+
+`latest` is deliberate: excalidraw publishes no version tags, and pinning by
+digest would silence Arcane's update check, which skips `repo@sha256:...`
+references by design.
 
 **Networks:** `reverse-proxy-nw` (external access via NPM), `default-nw` (internal).
 
