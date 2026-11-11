@@ -372,18 +372,22 @@ cp example.env .env
 Dynamic DNS client that periodically updates a DuckDNS subdomain with the server's
 current public IPv4 address.
 
-| Property       | Value                    |
-|----------------|--------------------------|
-| Directory      | `utils/duckdns/`         |
-| Image          | `linuxserver/duckdns`    |
-| Restart policy | `unless-stopped`         |
+| Property       | Value                                  |
+|----------------|----------------------------------------|
+| Directory      | `utils/duckdns/`                       |
+| Image          | `linuxserver/duckdns:version-8f533707` |
+| Restart policy | `unless-stopped`                       |
 
-**Configuration:** Create a `.env` file in `utils/duckdns/`:
+**Configuration:** Copy `utils/duckdns/example.env` to `.env`:
 
 | Variable     | Description                          | Example       |
 |--------------|--------------------------------------|---------------|
+| `HOSTNAME`   | Container name suffix (`duckdns-<host>`) | `homelab` |
 | `SUBDOMAINS` | DuckDNS subdomain(s) to update       | `mysubdomain` |
 | `TOKEN`      | DuckDNS account token                | (your token)  |
+
+LinuxServer publishes commit-versioned tags, not semver: `version-<sha>` is the
+stable form. This service is only ever deployed on homelab.
 
 **Networks:** `default-nw` only (no external access needed).
 
