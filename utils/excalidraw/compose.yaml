@@ -1,9 +1,12 @@
 services:
   excalidraw:
+    # No version tags upstream, and a digest pin would opt the image out of
+    # Arcane's update check entirely: it skips `repo@sha256:...` references by
+    # design. `latest` is therefore the only form that can be monitored.
     image: excalidraw/excalidraw:latest
     container_name: 'excalidraw-${HOSTNAME}'
-    ports:
-      - '5000:5000'
+    # No published port: every other service behind the reverse proxy reaches it
+    # through NPM, and 5000 was the last one listening on 0.0.0.0.
     restart: unless-stopped
     volumes:
       - '/etc/localtime:/etc/localtime:ro'
