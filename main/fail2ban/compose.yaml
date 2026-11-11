@@ -1,39 +1,16 @@
 services:
-  msmtpd:
-    container_name: 'msmtpd-${HOSTNAME}'
-    # Pinned: ':latest' drifted between hosts (mary still ran a 2025 image while
-    # the test hosts ran the 2026 one). This sidecar publishes no port and is
-    # therefore NOT on the mail path: Fail2ban sends to 127.0.0.1:25, which
-    # needs a host MTA (exim4). See `roles/exim/config` in the ansible repo.
-    image: 'crazymax/msmtpd:1.8.34'
-    environment:
-      TZ: 'Europe/Paris'
-      SMTP_HOST: 'mail.infomaniak.com'
-      SMTP_PORT: '587'
-      SMTP_TLS: 'on'
-      SMTP_STARTTLS: 'on'
-      SMTP_AUTH: 'on'
-      SMTP_USER: '${SMTP_USER}'
-      SMTP_PASSWORD: '${SMTP_PASSWORD}'
-      SMTP_DOMAIN: '${HOSTNAME}.lgdweb.ovh'
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'nc', '-z', '127.0.0.1', '2500']
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
   fail2ban:
     container_name: 'fail2ban-${HOSTNAME}'
     image: 'crazymax/fail2ban:1.1.1'
-    depends_on:
-      msmtpd:
-        condition: service_healthy
     environment:
       # The entrypoint only reads TZ, F2B_LOG_TARGET, F2B_LOG_LEVEL,
       # F2B_DB_PURGE_AGE and IPTABLES_MODE. F2B_ACTION, F2B_DEST_EMAIL and
       # F2B_IPTABLES_CHAIN were never read: `action`, `destemail` and the ban
       # chain come from fail2ban/data/jail.d/*.conf and action.d/iptables-docker.conf.
+      # No SMTP sidecar: mail leaves through the host MTA on 127.0.0.1:25
+      # (exim4, installed by roles/exim/config in the ansible repository). The
+      # previous msmtpd published no port at all, so this host-network container
+      # could never reach it.
       TZ: 'Europe/Paris'
       F2B_LOG_TARGET: '/srv/logs/fail2ban/fail2ban.log'
       F2B_LOG_LEVEL: 'INFO'
