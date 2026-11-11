@@ -1,6 +1,6 @@
 services:
   duckdns:
-    image: linuxserver/duckdns
+    image: linuxserver/duckdns:version-8f533707
     container_name: 'duckdns-${HOSTNAME}'
     environment:
       - TZ=Europe/Paris
