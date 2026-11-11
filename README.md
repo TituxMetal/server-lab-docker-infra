@@ -254,7 +254,7 @@ default landing page.
 #### Fail2ban
 
 Intrusion prevention system that monitors log files and bans IPs showing malicious
-activity. Sends email notifications via SMTP.
+activity. Sends email notifications through the host MTA on `127.0.0.1:25`.
 
 | Property       | Value                        |
 |----------------|------------------------------|
@@ -271,14 +271,17 @@ cd main/fail2ban/
 cp example.env .env
 ```
 
-| Variable          | Description                        | Example                 |
-|-------------------|------------------------------------|-------------------------|
-| `HOSTNAME`        | Server hostname for container name | `homer`                 |
-| `SMTP_USER`       | SMTP authentication username       | `smtp-user@example.com` |
-| `SMTP_PASSWORD`   | SMTP authentication password       | (your SMTP password)    |
+| Variable   | Description                        | Example   |
+|------------|------------------------------------|-----------|
+| `HOSTNAME` | Server hostname for container name | `homelab` |
 
 `destemail`/`sender` are not environment variables: the image entrypoint never
 read `F2B_DEST_EMAIL`. They live in `fail2ban/data/jail.d/default.conf`.
+
+There is no SMTP configuration here: notifications go through the **host MTA**
+on `127.0.0.1:25` (`exim4`, installed by `roles/exim/config` in the ansible
+repository). The `msmtpd` sidecar was removed: it published no port, so this
+host-network container could never reach it.
 
 **Volumes:**
 
@@ -526,9 +529,10 @@ requires environment variables provides an `example.env` file as a template.
 | Arcane     | `APP_URL`            | Yes      | Public URL of the manager          |
 | Arcane     | `ENCRYPTION_KEY`     | Yes      | Never change once data exists      |
 | Arcane     | `ADMIN_STATIC_API_KEY` | Yes    | `arc_` + 64 hex                    |
-| Fail2ban   | `HOSTNAME`           | Yes      | Server hostname                    |
-| Fail2ban   | `SMTP_USER`          | Yes      | SMTP username (msmtpd)             |
-| Fail2ban   | `SMTP_PASSWORD`      | Yes      | SMTP password (msmtpd)             |
+| Fail2ban   | `HOSTNAME`           | Yes      | Container name suffix              |
+| DuckDNS    | `HOSTNAME`           | Yes      | Container name suffix              |
+| DuckDNS    | `SUBDOMAINS`         | Yes      | Subdomain(s) to update             |
+| DuckDNS    | `TOKEN`              | Yes      | DuckDNS account token              |
 
 ### Custom Applications
 
