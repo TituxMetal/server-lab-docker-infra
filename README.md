@@ -23,7 +23,6 @@ kept in sync.
   - [Utils -- Utility Services](#utils----utility-services)
 - [Environment Variables Reference](#environment-variables-reference)
 - [Deployment Methods](#deployment-methods)
-- [Automated Updates with Renovate](#automated-updates-with-renovate)
 - [Common Commands](#common-commands)
 
 ## Architecture Overview
@@ -47,11 +46,8 @@ server-lab-docker-infra/
 |   |-- duckdns/                 Dynamic DNS updater
 |   |-- excalidraw/              Collaborative whiteboard
 |   |-- plausible/               Privacy-friendly web analytics (Plausible CE)
-|   |-- lobechat/                AI chat interface (OpenAI-compatible)
 |   |-- rustdesk/                Remote desktop (ID + relay servers)
-|   |-- uptime-kuma/             Uptime monitoring dashboard
 |
-|-- renovate.json                Automated dependency update configuration
 |-- .gitignore                   Excludes all .env files from version control
 ```
 
@@ -75,10 +71,8 @@ server-lab-docker-infra/
    |  - NPM + main-site  |  |  - hbbs (ID server)   |
    |  - excalidraw       |  |  - hbbr (relay)       |
    |  - plausible        |  +-----------+-----------+
-   |  - lobechat         |              |
    |  - logi-prod-report |  +-----------+-----------+
    |  - work-journal     |  |                       |
-   |  - uptime-kuma      |  |      default-nw       |
    |  - arcane manager   |  |  192.168.10.0/24      |
    |                      |  |  |  (internal bridge)    |
    +----------+-----------+  |  |                       |
@@ -158,7 +152,7 @@ cp example.env .env    # Edit .env with your values
 docker compose up -d
 
 # 3. Deploy any additional service
-cd ../../utils/uptime-kuma/
+cd ../../utils/excalidraw/
 docker compose up -d
 ```
 
@@ -454,28 +448,6 @@ rotation and `event-data` retention are **not** solved here.
 
 ---
 
-#### LobeChat
-
-Self-hosted AI chat interface compatible with OpenAI and other LLM providers.
-
-| Property       | Value                  |
-|----------------|------------------------|
-| Directory      | `utils/lobechat/`      |
-| Image          | `lobehub/lobe-chat`    |
-| Restart policy | `unless-stopped`       |
-
-**Configuration:** Create a `.env` file in `utils/lobechat/`:
-
-| Variable           | Description                        | Example                     |
-|--------------------|------------------------------------|-----------------------------|
-| `ACCESS_CODE`      | Access code to protect the UI      | (strong passphrase)         |
-| `OPENAI_API_KEY`   | OpenAI API key                     | `sk-proj-...`               |
-| `OPENAI_PROXY_URL` | Proxy URL for OpenAI API (set in compose) | `https://api-proxy.com/v1` |
-
-**Networks:** `reverse-proxy-nw` (external access via NPM), `default-nw` (internal).
-
----
-
 #### RustDesk
 
 Self-hosted remote desktop solution with an ID server and a relay server running as
@@ -532,35 +504,6 @@ string that relay requests must carry.
   mounted at `/root` on both containers. It stores the key pair and the peer database.
 
 **Networks:** `rustdesk-nw` (isolated bridge, auto-created), `default-nw` (internal).
-
----
-
-#### Uptime Kuma
-
-Self-hosted uptime monitoring tool with support for HTTP(S), TCP, DNS, Docker, and
-other check types. Provides a status page and notifications.
-
-| Property       | Value                      |
-|----------------|----------------------------|
-| Directory      | `utils/uptime-kuma/`       |
-| Image          | `louislam/uptime-kuma:1`   |
-| Restart policy | `always`                   |
-
-**Exposed ports:**
-
-| Port | Binding        | Purpose        |
-|------|----------------|----------------|
-| 3001 | 127.0.0.1 only | Web UI         |
-
-The port is bound to localhost only. Use Nginx Proxy Manager to expose it externally
-with SSL.
-
-**Volumes:**
-
-- Named volume `data` mounted at `/app/data`
-- `/var/run/docker.sock` for Docker container monitoring
-
-**Networks:** `reverse-proxy-nw` (external access via NPM), `default-nw` (internal).
 
 ---
 
@@ -641,22 +584,6 @@ Recommended for manual deployments and visual management.
 
 To update a project, change the compose file or the variables and redeploy. A git
 project can also be imported once instead of being synced continuously.
-
-## Automated Updates with Renovate
-
-This repository uses [Renovate](https://docs.renovatebot.com/) to keep Docker image
-versions up to date. The configuration is in `renovate.json`.
-
-| Setting                   | Value                                                           |
-|---------------------------|-----------------------------------------------------------------|
-| Base config               | `config:recommended`                                            |
-| Assignee                  | `TituxMetal`                                                    |
-| Auto-merge                | Minor, patch, and digest updates                                |
-| Auto-merge strategy       | Branch (no PR created for auto-merged updates)                  |
-| Dependency dashboard      | Enabled (auto-closes when all updates are applied)              |
-| Schedule                  | Weekdays 10 PM -- 5 AM, all day on weekends                    |
-
-Major version updates require manual review and are not auto-merged.
 
 ## Common Commands
 
