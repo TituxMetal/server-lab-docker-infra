@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   logi-prod-report:
     image: lgdweb/logi-prod-report:latest
