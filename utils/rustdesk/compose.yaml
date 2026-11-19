@@ -6,7 +6,7 @@ services:
       - '21115:21115'
       - '21116:21116'
       - '21116:21116/udp'
-      - '21118:21118'
+      #- '21118:21118'
     volumes:
       - rustdesk-data:/root
     # No `-k` here on purpose: hbbs only loads id_ed25519 from /root when `-k`
@@ -29,7 +29,7 @@ services:
     command: 'hbbr -k ${RUSTDESK_KEY:?RUSTDESK_KEY is required}'
     ports:
       - '21117:21117'
-      - '21119:21119'
+      #- '21119:21119'
     volumes:
       - rustdesk-data:/root
     networks:
