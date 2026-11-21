@@ -1,7 +1,7 @@
 services:
   arcane:
     container_name: 'arcane-manager-${ARCANE_INSTANCE:?ARCANE_INSTANCE is required}'
-    image: 'ghcr.io/getarcaneapp/manager:${ARCANE_VERSION:-v2.17.3}'
+    image: 'ghcr.io/getarcaneapp/manager:${ARCANE_VERSION:-v3.1.1}'
     environment:
       TZ: 'Europe/Paris'
       APP_URL: '${APP_URL:?APP_URL is required}'
@@ -19,6 +19,7 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - 'arcane-manager-data:/app/data'
     networks:
+      - reverse-proxy-nw
       - default-nw
     restart: unless-stopped
 
@@ -31,4 +32,6 @@ volumes:
 
 networks:
   default-nw:
+    external: true
+  reverse-proxy-nw:
     external: true

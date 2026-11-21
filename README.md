@@ -178,7 +178,7 @@ fleet; this stack is the standalone fallback.
 | Property       | Value                          |
 |----------------|--------------------------------|
 | Directory      | `main/arcane/`                 |
-| Image          | `ghcr.io/getarcaneapp/manager:v2.17.3` |
+| Image          | `ghcr.io/getarcaneapp/manager:v3.1.1` |
 | Restart policy | `unless-stopped`               |
 
 **Exposed ports:** none. Proxy host -> `arcane-manager-<instance>:3552` (WebSocket
@@ -194,7 +194,7 @@ cp example.env .env
 | Variable                | Description                                                   | Example                    |
 |-------------------------|---------------------------------------------------------------|----------------------------|
 | `ARCANE_INSTANCE`       | Hostname used in the container name                           | `$HOSTNAME`                |
-| `ARCANE_VERSION`        | Pinned manager image tag                                      | `v2.17.3`                  |
+| `ARCANE_VERSION`        | Pinned manager image tag                                      | `v3.1.1`                   |
 | `APP_URL`               | Public URL of the manager                                     | `https://arcane.example.com` |
 | `ENCRYPTION_KEY`        | `openssl rand -hex 32`. **Never change it once data exists**  | (random)                   |
 | `ADMIN_STATIC_API_KEY`  | `arc_` + 64 hex, any other format is rejected at startup      | `arc_...`                  |
@@ -202,6 +202,9 @@ cp example.env .env
 
 **Volumes:** `/var/run/docker.sock`, named volume `arcane-manager-data` mounted at
 `/app/data`.
+
+**Networks:** `reverse-proxy-nw` (external access via NPM), `default-nw` (internal).
+The manager publishes no port: NPM is its only entry point, so it has to sit on both.
 
 **Notes:** see `NOTES.md`. Use an SSH tunnel for the NPM admin panel; a proxy host
 pointing at port `81` would expose it publicly even though Docker binds it to
