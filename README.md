@@ -44,7 +44,6 @@ server-lab-docker-infra/
 |
 |-- utils/                       Utility and self-hosted services
 |   |-- duckdns/                 Dynamic DNS updater
-|   |-- excalidraw/              Collaborative whiteboard
 |   |-- plausible/               Privacy-friendly web analytics (Plausible CE)
 |   |-- rustdesk/                Remote desktop (ID + relay servers)
 |
@@ -69,11 +68,10 @@ server-lab-docker-infra/
    |  (external bridge)  |       |  (same default-nw,  |
    |                     |       |   no proxy needed)  |
    |  - NPM + main-site  |       |                     |
-   |  - excalidraw       |       |  - hbbs (ID server) |
-   |  - arcane manager   |       |  - hbbr (relay)     |
-   |  - plausible        |       |                     |
-   |  - logi-prod-report |       +----------+----------+
-   |  - work-journal     |                  |
+   |  - arcane manager   |       |  - hbbs (ID server) |
+   |  - plausible        |       |  - hbbr (relay)     |
+   |  - logi-prod-report |       |                     |
+   |  - work-journal     |       +----------+----------+
    +----------+----------+                  |
               |                             |
               +--------------+--------------+
@@ -154,7 +152,8 @@ cp example.env .env    # Edit .env with your values
 docker compose up -d
 
 # 3. Deploy any additional service
-cd ../../utils/excalidraw/
+cd ../../utils/duckdns/
+cp example.env .env    # Edit .env with your values
 docker compose up -d
 ```
 
@@ -398,30 +397,6 @@ LinuxServer publishes commit-versioned tags, not semver: `version-<sha>` is the
 stable form. This service is only ever deployed on homelab.
 
 **Networks:** `default-nw` only (no external access needed).
-
----
-
-#### Excalidraw
-
-Self-hosted collaborative whiteboard for sketching diagrams and wireframes.
-
-| Property       | Value                           |
-|----------------|---------------------------------|
-| Directory      | `utils/excalidraw/`             |
-| Image          | `excalidraw/excalidraw:latest`  |
-| Restart policy | `unless-stopped`                |
-
-**Exposed ports:** none (behind the reverse proxy). It used to publish
-`5000:5000` on every interface; Nginx Proxy Manager reaches it over
-`reverse-proxy-nw`.
-
-**Configuration:** No `.env` file required. Uses the system `$HOSTNAME` for container naming.
-
-`latest` is deliberate: excalidraw publishes no version tags, and pinning by
-digest would silence Arcane's update check, which skips `repo@sha256:...`
-references by design.
-
-**Networks:** `reverse-proxy-nw` (external access via NPM), `default-nw` (internal).
 
 ---
 
