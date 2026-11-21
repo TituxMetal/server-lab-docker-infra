@@ -15,7 +15,6 @@ services:
     # The private key must already be in the volume (see example.env).
     command: 'hbbs -r ${RUSTDESK_RELAY_HOST:?RUSTDESK_RELAY_HOST is required}:21117'
     networks:
-      - rustdesk-nw
       - default-nw
     depends_on:
       - hbbr
@@ -33,7 +32,6 @@ services:
     volumes:
       - rustdesk-data:/root
     networks:
-      - rustdesk-nw
       - default-nw
     restart: unless-stopped
 
@@ -46,5 +44,3 @@ volumes:
 networks:
   default-nw:
     external: true
-  rustdesk-nw:
-    external: false

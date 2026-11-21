@@ -61,28 +61,35 @@ server-lab-docker-infra/
                     +--------+--------+
                              |
               +--------------+--------------+
-              |              |              |
-         80/443/81     21115-21119
-              |              |
-   +----------+----------+  +-----------+-----------+
-   |  reverse-proxy-nw   |  |     rustdesk-nw       |
-   |  (external bridge)  |  |  (isolated bridge)    |
-   |                      |  |                       |
-   |  - NPM + main-site  |  |  - hbbs (ID server)   |
-   |  - excalidraw       |  |  - hbbr (relay)       |
-   |  - plausible        |  +-----------+-----------+
-   |  - logi-prod-report |  +-----------+-----------+
-   |  - work-journal     |  |                       |
-   |  - arcane manager   |  |  192.168.10.0/24      |
-   |                      |  |  |  (internal bridge)    |
-   +----------+-----------+  |  |                       |
-              |              |  |  All services connect  |
-              +--------------+--+  here for internal    |
-                                |  communication        |
-                                +-----------------------+
-                                         |
-                                   host network
-                                   (fail2ban only)
+              |                             |
+     80/443/81 (all)             21115-21117 (published)
+              |                             |
+   +----------+----------+       +----------+----------+
+   |  reverse-proxy-nw   |       |     rustdesk-*      |
+   |  (external bridge)  |       |  (same default-nw,  |
+   |                     |       |   no proxy needed)  |
+   |  - NPM + main-site  |       |                     |
+   |  - excalidraw       |       |  - hbbs (ID server) |
+   |  - arcane manager   |       |  - hbbr (relay)     |
+   |  - plausible        |       |                     |
+   |  - logi-prod-report |       +----------+----------+
+   |  - work-journal     |                  |
+   +----------+----------+                  |
+              |                             |
+              +--------------+--------------+
+                             |
+                    +--------+--------+
+                    |    default-nw   |
+                    | (internal bridge)|
+                    |  192.168.10.0/24 |
+                    |  iprange 0/26    |
+                    |                  |
+                    |  every service  |
+                    |  joins this one  |
+                    +------------------+
+                             |
+                       host network
+                       (fail2ban only)
 ```
 
 ## Prerequisites
@@ -123,11 +130,6 @@ public-facing access through Nginx Proxy Manager. Create it manually:
 ```bash
 docker network create reverse-proxy-nw
 ```
-
-### 3. RustDesk network (automatic)
-
-The `rustdesk-nw` network is defined as a non-external network in the RustDesk compose
-file and is created automatically when the RustDesk stack is deployed.
 
 ## Quick Start
 
@@ -463,7 +465,7 @@ rotation and `event-data` retention are **not** solved here.
 #### RustDesk
 
 Self-hosted remote desktop solution with an ID server and a relay server running as
-separate containers on an isolated network.
+separate containers on the shared default network.
 
 | Property       | Value                              |
 |----------------|------------------------------------|
@@ -478,8 +480,8 @@ separate containers on an isolated network.
 | 21115 | TCP      | hbbs    | NAT type test **and the address-book online status stream** |
 | 21116 | TCP/UDP  | hbbs    | ID server / hole punch   |
 | 21117 | TCP      | hbbr    | Relay server             |
-| 21118 | TCP      | hbbs    | WebSocket (ID)           |
-| 21119 | TCP      | hbbr    | WebSocket (relay)        |
+| 21118 | TCP      | hbbs    | WebSocket (ID) — **commented out in compose** |
+| 21119 | TCP      | hbbr    | WebSocket (relay) — **commented out in compose** |
 
 **Configuration:** create `.env` from `example.env`:
 
@@ -515,7 +517,10 @@ string that relay requests must carry.
 - Named volume `rustdesk-data` (fixed `name:`, not prefixed by the compose project),
   mounted at `/root` on both containers. It stores the key pair and the peer database.
 
-**Networks:** `rustdesk-nw` (isolated bridge, auto-created), `default-nw` (internal).
+**Networks:** `default-nw` only. `hbbs` and `hbbr` never resolve each other by name —
+the relay address is handed to the *client* (`hbbs -r <host>:21117`) and the client
+connects to `hbbr` directly — so the former isolated `rustdesk-nw` bridge was redundant
+and has been removed. Nothing here is fronted by NPM: the ports are published directly.
 
 ---
 
