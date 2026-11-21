@@ -244,7 +244,9 @@ default landing page.
 - `/srv/logs/nginx-proxy-manager` -- NPM logs
 - `/srv/nginx-proxy-manager/data/letsencrypt` -- SSL certificates
 
-**Configuration:** No `.env` file required. Uses the system `$HOSTNAME` directly.
+**Configuration:** copy `main/nginx-proxy-manager/example.env` to `.env` (`HOSTNAME`
+only). The CLI falls back to the shell's `$HOSTNAME`; setting it explicitly keeps the
+container names identical when the stack is deployed through Arcane.
 
 **Default credentials (first login):**
 
@@ -330,8 +332,7 @@ cp example.env .env
 | Variable               | Description                           | Example                                          |
 |------------------------|---------------------------------------|--------------------------------------------------|
 | `DATABASE_URL`         | SQLite connection string              | `file:./data.sqlite?connection_limit=1`          |
-| `AUTH_SESSION_SECRET`  | Secret key for session signing        | (random string)                                  |
-| `AUTH_SESSION_MAX_AGE` | Session duration in seconds           | `1800` (30 minutes)                              |
+| `AUTH_SESSION_SECRET`  | Session signing secret, `openssl rand -hex 32` | (64 hex characters)                     |
 
 **Volumes:**
 
@@ -417,8 +418,10 @@ events database.
 
 | Variable             | Required | Description                             |
 |----------------------|----------|-----------------------------------------|
+| `HOSTNAME`           | Yes      | Suffix used in the three container names |
 | `BASE_URL`           | Yes      | Public URL (e.g. `https://analytics.example.com`) |
-| `SECRET_KEY_BASE`    | Yes      | 64-char random secret for session encryption      |
+| `SECRET_KEY_BASE`    | Yes      | `openssl rand -hex 32`                  |
+| `POSTGRES_PASSWORD`  | Yes      | `openssl rand -base64 24`; `DATABASE_URL` is derived from it |
 | `DISABLE_REGISTRATION` | No    | Set to `invite_only` after first signup           |
 | `SMTP_HOST_ADDR`     | No       | SMTP server for email notifications               |
 
@@ -521,9 +524,10 @@ requires environment variables provides an `example.env` file as a template.
 
 | Service          | Variable               | Required | Description                 |
 |------------------|------------------------|----------|-----------------------------|
+| Logi Prod Report | `HOSTNAME`             | Yes      | Container name suffix       |
 | Logi Prod Report | `DATABASE_URL`         | Yes      | SQLite connection string    |
-| Logi Prod Report | `AUTH_SESSION_SECRET`  | Yes      | Session signing secret      |
-| Logi Prod Report | `AUTH_SESSION_MAX_AGE` | No       | Session TTL in seconds      |
+| Logi Prod Report | `AUTH_SESSION_SECRET`  | Yes      | Session signing secret (`openssl rand -hex 32`) |
+| Work Journal     | `HOSTNAME`             | Yes      | Container name suffix       |
 | Work Journal     | `DATABASE_URL`         | Yes      | SQLite connection string    |
 | Work Journal     | `SESSION_SECRET`       | Yes      | Session signing secret      |
 | Work Journal     | `ADMIN_PASSWORD`       | Yes      | Admin login password        |
@@ -534,10 +538,10 @@ requires environment variables provides an `example.env` file as a template.
 |-----------|--------------------|----------|----------------------------------|
 | DuckDNS   | `SUBDOMAINS`       | Yes      | DuckDNS subdomain(s)            |
 | DuckDNS   | `TOKEN`            | Yes      | DuckDNS account token            |
+| Plausible | `HOSTNAME`         | Yes      | Container name suffix            |
 | Plausible | `BASE_URL`         | Yes      | Public URL for the analytics instance |
-| Plausible | `SECRET_KEY_BASE`  | Yes      | 64-char secret for session encryption |
-| LobeChat  | `ACCESS_CODE`      | Yes      | UI access protection code        |
-| LobeChat  | `OPENAI_API_KEY`   | Yes      | OpenAI API key                   |
+| Plausible | `SECRET_KEY_BASE`  | Yes      | `openssl rand -hex 32`           |
+| Plausible | `POSTGRES_PASSWORD`| Yes      | `openssl rand -base64 24`, change before first start |
 | RustDesk  | `RUSTDESK_INSTANCE` | Yes     | Container name suffix            |
 | RustDesk  | `RUSTDESK_RELAY_HOST` | Yes   | Client-facing relay hostname     |
 | RustDesk  | `RUSTDESK_KEY`     | Yes      | Public key (relay authentication) |
